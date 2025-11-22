@@ -20,4 +20,4 @@ So decided to build mine with the following specifications:
 
   PCB is available on PCBWay shared project : https://www.pcbway.com/project/shareproject/Radiomaster_TX16s_buddy_box_master_trainer_and_more_9a7ddc8f.html
 
-  It works with ESP32-C3 super mini boards. Source code is here : 
+  It works with ESP32-C3 super mini boards. Source code is here : https://github.com/f2knpw/Radiomaster_TX16s_buddy_box/blob/master/ESP32_C3_TX16s_buddyBox.ino
