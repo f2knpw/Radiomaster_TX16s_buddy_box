@@ -55,6 +55,7 @@ unsigned long previousMillis = 0;  // Stores last time temperature was published
 const long interval = 10;          // Interval at which to publish sensor readings
 unsigned long start;               // used to measure Pairing time
 bool dataToSend = false;
+long dataInterval;
 
 #define DEBUG_ESPNOW
 #define DEBUG_PPM
@@ -154,6 +155,7 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
   switch (type) {
     case DATA:                           // we received data from sender
       if (pairingStatus == PAIR_PAIRED)  //only accept these data when paired
+      blinkLed();
       {
         memcpy(&inData, incomingData, sizeof(inData));
 #ifdef DEBUG_DATA
@@ -292,6 +294,14 @@ void setup() {
   sbusStarted = millis();
 }
 
+void blinkLed(void)
+{
+   if((millis()-dataInterval) > 50) 
+    {
+      digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+       dataInterval = millis();
+    }
+}
 void loop() {
   //ESPNow
   switch (pairingStatus) {
@@ -331,6 +341,7 @@ void loop() {
 
     case PAIR_PAIRED:  //send data
       if (dataToSend) {
+        blinkLed();
         myData.msgType = DATA;
         for (int8_t i = 0; i < data.NUM_CH; i++) {  // do something with the SBUS values for each channel
           myData.channels[i] = data.ch[i];
