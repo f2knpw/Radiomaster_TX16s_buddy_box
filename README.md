@@ -19,3 +19,5 @@ So decided to build mine with the following specifications:
   The project is fully described on my Hackaday project page : https://hackaday.io/project/204529-tx16s-buddy-box-wireless-mastertrainer
 
   PCB is available on PCBWay shared project : https://www.pcbway.com/project/shareproject/Radiomaster_TX16s_buddy_box_master_trainer_and_more_9a7ddc8f.html
+
+  It works with ESP32-C3 super mini boards. Source code is here : 
