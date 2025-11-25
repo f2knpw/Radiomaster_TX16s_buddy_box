@@ -4,7 +4,7 @@ Radiomaster TX16s buddy box (master/trainer and more)
 I wanted a wireless buddy box for my Radiomaster TX16s to wireless link two TX16s in Master/Trainer mode.
 
 
-So decided to build mine with the following specifications:
+So I decided to build mine with the following specifications:
 - cheap (two fully working modules for less than 20$)
 - auto configuration as master or slave or vice versa
 - auto binding between two modules
