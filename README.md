@@ -25,7 +25,11 @@ So I decided to build mine with the following specifications:
 
 a few videos showing how it works :
 
-see what is inside
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=Sv487SR5yGs
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=Sv487SR5yGs 
 " target="_blank"><img src="http://img.youtube.com/vi/Sv487SR5yGs/0.jpg" 
+alt="IMAGE ALT TEXT HERE" width="1180" height="664" border="10" /></a>
+
+with an old TH9x PPM radio 
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=g21BqA_hWCk
+" target="_blank"><img src="http://img.youtube.com/vi/g21BqA_hWCk/0.jpg" 
 alt="IMAGE ALT TEXT HERE" width="1180" height="664" border="10" /></a>
