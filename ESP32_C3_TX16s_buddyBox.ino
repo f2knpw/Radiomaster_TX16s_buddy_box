@@ -155,7 +155,7 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
   switch (type) {
     case DATA:                           // we received data from sender
       if (pairingStatus == PAIR_PAIRED)  //only accept these data when paired
-      blinkLed();
+        blinkLed();
       {
         memcpy(&inData, incomingData, sizeof(inData));
 #ifdef DEBUG_DATA
@@ -167,6 +167,12 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
         }
         Serial.println("");
 #endif
+        for (int8_t i = 0; i < 16; i++) {  // resend to the SBUS S_PORT pin for each channel
+          data.ch[i] = inData.channels[i];
+        }
+ data.lost_frame = false;  //initialize SBUS lost
+  data.failsafe = false;
+        dataToSend = true;
       }
       break;
 
@@ -294,13 +300,11 @@ void setup() {
   sbusStarted = millis();
 }
 
-void blinkLed(void)
-{
-   if((millis()-dataInterval) > 50) 
-    {
-      digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-       dataInterval = millis();
-    }
+void blinkLed(void) {
+  if ((millis() - dataInterval) > 50) {
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    dataInterval = millis();
+  }
 }
 void loop() {
   //ESPNow
@@ -402,7 +406,7 @@ void loop() {
                       ppmResultSpy->maxHigh, ppmResultSpy->minHigh);
         Serial.printf("minChan:%d\tmaxChan:%d\n", ppmResultSpy->minChan, ppmResultSpy->maxChan);
 #endif
-        if ((ppmResultSpy->minChan == 16) && (ppmResultSpy->maxChan == 16)) {
+        if ((ppmResultSpy->minChan > 7) && (ppmResultSpy->maxChan >7)) {
           ppmActive = true;  // if we have a strong 16 channels PPM
           spyFinished = true;
           myPPM_RX.start();  //start receiving
@@ -435,9 +439,12 @@ void loop() {
 
   //SBUS output on S_Port pin
   if ((!sbusActive) && (!ppmActive)) {  //we are with a "Master" buddy box (no input from CPMM pin, neither PPM nor SBUS)
-                                        //channel numbering starts at 0. values rang between 192 and 1792
-    sbus_tx.data(data);                 // Set the SBUS TX data to the received data
-    sbus_tx.Write();                    // Write the data to the S_PORT pin
+    //channel numbering starts at 0. values rang between 192 and 1792
+    if (dataToSend) {
+      sbus_tx.data(data);  // Set the SBUS TX data to the received data
+      sbus_tx.Write();     // Write the data to the S_PORT pin
+      dataToSend = false;
+    }
   } else {
     // we are on a slave buddy box (ESPNow will take care to send data)
   }
