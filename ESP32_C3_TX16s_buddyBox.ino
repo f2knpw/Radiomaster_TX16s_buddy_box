@@ -19,7 +19,8 @@ uint8_t myMacAddress[6];
 
 typedef struct struct_message {  // Structure to send/receive data
   uint8_t msgType;
-  int channels[16];
+  uint8_t macAddr[6];
+  short channels[16];
 } struct_message;
 
 typedef struct struct_pairing {  // structure for pairing
@@ -60,7 +61,7 @@ long dataInterval;
 #define DEBUG_ESPNOW
 #define DEBUG_PPM
 #define DEBUG_SBUS
-#define DEBUG_DATA  //will display data received and sent (comment  for higher speed)
+//#define DEBUG_DATA  //will display data received and sent (comment  for higher speed)
 
 #define RX_PIN 20  //CPMM PIN connected to Rx pin of ESP32-C3
 #define TX_PIN 21  //Tx pin of ESP32-C3 connected to S_PORT pin
@@ -153,26 +154,31 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
   Serial.print(sizeof(incomingData));*/
   uint8_t type = incomingData[0];
   switch (type) {
-    case DATA:                           // we received data from sender
+    case DATA:  // we received data from sender
       if (pairingStatus == PAIR_PAIRED)  //only accept these data when paired
-        blinkLed();
       {
+        blinkLed();
         memcpy(&inData, incomingData, sizeof(inData));
+        if ((inData.macAddr[0] + inData.macAddr[1] + inData.macAddr[2] + inData.macAddr[3] + inData.macAddr[4] + inData.macAddr[5]) != (myMacAddress[0] + myMacAddress[1] + myMacAddress[2] + myMacAddress[3] + myMacAddress[4] + myMacAddress[5])) {
+          {
 #ifdef DEBUG_DATA
-        Serial.print("ESPNow data received,\t");
+            Serial.print("ESPNow data received,\t");
 
-        for (int8_t i = 0; i < 16; i++) {  // do something with the SBUS values for each channel
-          Serial.print(inData.channels[i]);
-          Serial.print("\t");
-        }
-        Serial.println("");
+            for (int8_t i = 0; i < 16; i++) {  // do something with the SBUS values for each channel
+              Serial.print(inData.channels[i]);
+              Serial.print("\t");
+            }
+            Serial.println("");
 #endif
-        for (int8_t i = 0; i < 16; i++) {  // resend to the SBUS S_PORT pin for each channel
-          data.ch[i] = inData.channels[i];
+
+            for (int8_t i = 0; i < 16; i++) {  // resend to the SBUS S_PORT pin for each channel
+              data.ch[i] = inData.channels[i];
+            }
+            data.lost_frame = false;  //initialize SBUS lost
+            data.failsafe = false;
+            dataToSend = true;
+          }
         }
- data.lost_frame = false;  //initialize SBUS lost
-  data.failsafe = false;
-        dataToSend = true;
       }
       break;
 
@@ -351,6 +357,7 @@ void loop() {
           myData.channels[i] = data.ch[i];
         }
         dataToSend = false;
+        memcpy(pairingData.macAddr, myMacAddress, sizeof(uint8_t[6]));                     //with my MACaddress
         esp_err_t result = esp_now_send(peerAddress, (uint8_t *)&myData, sizeof(myData));  //send data to the peer
       }
       break;
@@ -406,7 +413,7 @@ void loop() {
                       ppmResultSpy->maxHigh, ppmResultSpy->minHigh);
         Serial.printf("minChan:%d\tmaxChan:%d\n", ppmResultSpy->minChan, ppmResultSpy->maxChan);
 #endif
-        if ((ppmResultSpy->minChan > 7) && (ppmResultSpy->maxChan >7)) {
+        if ((ppmResultSpy->minChan > 7) && (ppmResultSpy->maxChan > 7)) {
           ppmActive = true;  // if we have a strong 16 channels PPM
           spyFinished = true;
           myPPM_RX.start();  //start receiving
@@ -444,6 +451,7 @@ void loop() {
       sbus_tx.data(data);  // Set the SBUS TX data to the received data
       sbus_tx.Write();     // Write the data to the S_PORT pin
       dataToSend = false;
+      //Serial.println("SPORT sending");
     }
   } else {
     // we are on a slave buddy box (ESPNow will take care to send data)
