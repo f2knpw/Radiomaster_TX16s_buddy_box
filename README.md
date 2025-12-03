@@ -33,3 +33,14 @@ with an old TH9x PPM radio
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=g21BqA_hWCk
 " target="_blank"><img src="http://img.youtube.com/vi/g21BqA_hWCk/0.jpg" 
 alt="IMAGE ALT TEXT HERE" width="1180" height="664" border="10" /></a>
+
+with 2 radiomaster TX16s  
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=TjBhkZSGRDY
+" target="_blank"><img src="http://img.youtube.com/vi/TjBhkZSGRDY/0.jpg" 
+alt="IMAGE ALT TEXT HERE" width="1180" height="664" border="10" /></a>
+
+and with a plane !  
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=onzTWL2fCzU
+" target="_blank"><img src="http://img.youtube.com/vi/onzTWL2fCzU/0.jpg" 
+alt="IMAGE ALT TEXT HERE" width="1180" height="664" border="10" /></a>
+
