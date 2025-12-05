@@ -1,9 +1,42 @@
+/*Version 1.0
+
+Copyright JP Gleyzes 2025
+- full project description : https://hackaday.io/project/204529-tx16s-buddy-box-wireless-mastertrainer
+- source code : https://github.com/f2knpw/Radiomaster_TX16s_buddy_box
+-licence GPL V3 : https://www.gnu.org/licenses/gpl-3.0.fr.html
+
+This firmware will add "buddy box" to Radiomaster TX16s radios to allow to wireless link two TX16s in Master/Trainer mode.
+
+it has the following specifications:
+
+- cheap (two fully working modules for less than 20$)
+- auto configuration as master or slave or vice versa
+- auto binding between two modules
+- fully hidden into the "external module" compartment (no dangling wire outside the radio))
+- no modification into the TX16s
+- no firmware modification of your TX16s (stock EdgeTx firmware)
+- high speed wireless communication with about 20m range
+- automatic On/Off of the buddy boxes via EdgeTx
+- compatible 16 channels SBUS and PPM signals
+- extensible to further options (teasing: more to come !)
+
+
+*/
 
 #include <Arduino.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
 #include <WiFi.h>
 
+#define HAS_JOYSTICK
+
+#ifdef HAS_JOYSTICK
+//Bluetooth gamepad
+#include <BleGamepad.h>  //https://github.com/lemmingDev/ESP32-BLE-Gamepad
+
+BleGamepad bleGamepad("Radiomaster TX16s", "JPG", 100);
+int joystickValues[8];
+#endif
 
 //Preferences
 #include <Preferences.h>
@@ -154,7 +187,7 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
   Serial.print(sizeof(incomingData));*/
   uint8_t type = incomingData[0];
   switch (type) {
-    case DATA:  // we received data from sender
+    case DATA:                           // we received data from sender
       if (pairingStatus == PAIR_PAIRED)  //only accept these data when paired
       {
         blinkLed();
@@ -304,6 +337,14 @@ void setup() {
   data.lost_frame = true;  //initialize SBUS lost
   data.failsafe = true;
   sbusStarted = millis();
+
+
+#ifdef HAS_JOYSTICK
+  //gamepad
+  bleGamepad.begin();
+// Changing bleGamepadConfig after the begin function has no effect, unless you call the begin function again bleGamepad.begin();
+// The default bleGamepad.begin() above enables 16 buttons, all axes, one hat, and no simulation controls or special buttons
+#endif
 }
 
 void blinkLed(void) {
@@ -354,11 +395,21 @@ void loop() {
         blinkLed();
         myData.msgType = DATA;
         for (int8_t i = 0; i < data.NUM_CH; i++) {  // do something with the SBUS values for each channel
-          myData.channels[i] = data.ch[i];
+          myData.channels[i] = constrain(data.ch[i], 192, 1792);
         }
         dataToSend = false;
         memcpy(pairingData.macAddr, myMacAddress, sizeof(uint8_t[6]));                     //with my MACaddress
         esp_err_t result = esp_now_send(peerAddress, (uint8_t *)&myData, sizeof(myData));  //send data to the peer
+#ifdef HAS_JOYSTICK
+        if (bleGamepad.isConnected()) {
+          Serial.println(myData.channels[0]);
+          for (int i = 0; i < 8; i++) {
+            //constrain(myData.channels[i], 192, 1792);
+            joystickValues[i] = map(myData.channels[i], 192, 1792, 0, 32767);
+          }
+          bleGamepad.setAxes(joystickValues[0], joystickValues[1], joystickValues[2], joystickValues[3], joystickValues[4], joystickValues[5], joystickValues[6], joystickValues[7]);  //setAxes in the order (x, y, z, rx, ry, rz, slider1, slider2) setHIDAxes in the order (x, y, z, rz, rx, ry)
+        }
+#endif
       }
       break;
   }
@@ -371,7 +422,8 @@ void loop() {
       sbusActive = true;
       sbusStarted = millis();
     }
-// Display the received data
+    // Display the received data
+
 #ifdef DEBUG_DATA
     Serial.print("SBUS data received,\t");
     for (int8_t i = 0; i < data.NUM_CH; i++) {  // do something with the SBUS values for each channel
@@ -380,6 +432,7 @@ void loop() {
     }
     Serial.println(" ");
 #endif
+
     dataToSend = true;
   }
   if ((millis() - sbusStarted) > 3000) sbusActive = false;  //SBUS is not active try PPM
@@ -427,9 +480,10 @@ void loop() {
     }
 
     if (myPPM_RX.newFrame() && ppmActive) {
-      for (int i = 1; i < (ppmArray[0] + 1); i++) {                //do something with the PPM values for each channel
-                                                                   // Serial.printf("%d", ppmArray[i]);
-                                                                   // Serial.print("\t");
+      for (int i = 1; i < (ppmArray[0] + 1); i++) {  //do something with the PPM values for each channel
+        // Serial.printf("%d", ppmArray[i]);
+        // Serial.print("\t");
+        constrain(ppmArray[i], 1000, 2000);
         data.ch[i - 1] = map(ppmArray[i], 1000, 2000, 192, 1792);  //map(value, fromLow, fromHigh, toLow, toHigh). Convert PPM to SBUS
       }
 #ifdef DEBUG_DATA
