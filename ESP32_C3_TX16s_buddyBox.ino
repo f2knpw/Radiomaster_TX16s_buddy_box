@@ -35,6 +35,8 @@ it has the following specifications:
 #include <BleGamepad.h>  //https://github.com/lemmingDev/ESP32-BLE-Gamepad
 
 BleGamepad bleGamepad("Radiomaster TX16s", "JPG", 100);
+BleGamepadConfiguration bleGamepadConfig;  // Create a BleGamepadConfiguration object to store all of the options
+
 int joystickValues[8];
 #endif
 
@@ -341,9 +343,18 @@ void setup() {
 
 #ifdef HAS_JOYSTICK
   //gamepad
-  bleGamepad.begin();
-// Changing bleGamepadConfig after the begin function has no effect, unless you call the begin function again bleGamepad.begin();
-// The default bleGamepad.begin() above enables 16 buttons, all axes, one hat, and no simulation controls or special buttons
+  // bleGamepad.begin();
+  // Changing bleGamepadConfig after the begin function has no effect, unless you call the begin function again bleGamepad.begin();
+  // The default bleGamepad.begin() above enables 16 buttons, all axes, one hat, and no simulation controls or special buttons
+
+  // bleGamepadConfig.setAutoReport(false);
+  // bleGamepadConfig.setControllerType(CONTROLLER_TYPE_GAMEPAD);  // CONTROLLER_TYPE_JOYSTICK, CONTROLLER_TYPE_GAMEPAD (DEFAULT), CONTROLLER_TYPE_MULTI_AXIS
+  bleGamepadConfig.setVid(0x068F);
+  bleGamepadConfig.setPid(0x0041);
+  bleGamepadConfig.setAxesMin(0x0000);  // 0 --> int16_t - 16 bit signed integer - Can be in decimal or hexadecimal
+  bleGamepadConfig.setAxesMax(2048);    // 32767 --> int16_t - 16 bit signed integer - Can be in decimal or hexadecimal
+
+  bleGamepad.begin(&bleGamepadConfig);  // Begin gamepad with configuration options
 #endif
 }
 
@@ -402,10 +413,8 @@ void loop() {
         esp_err_t result = esp_now_send(peerAddress, (uint8_t *)&myData, sizeof(myData));  //send data to the peer
 #ifdef HAS_JOYSTICK
         if (bleGamepad.isConnected()) {
-          Serial.println(myData.channels[0]);
           for (int i = 0; i < 8; i++) {
-            //constrain(myData.channels[i], 192, 1792);
-            joystickValues[i] = map(myData.channels[i], 192, 1792, 0, 32767);
+            joystickValues[i] = map(myData.channels[i], 192, 1792, 0, 2048);
           }
           bleGamepad.setAxes(joystickValues[0], joystickValues[1], joystickValues[2], joystickValues[3], joystickValues[4], joystickValues[5], joystickValues[6], joystickValues[7]);  //setAxes in the order (x, y, z, rx, ry, rz, slider1, slider2) setHIDAxes in the order (x, y, z, rz, rx, ry)
         }
@@ -413,6 +422,20 @@ void loop() {
       }
       break;
   }
+#ifdef HAS_JOYSTICK
+  if ((dataToSend) && (bleGamepad.isConnected())) {  //if data has not been yet sent (then PAIRING is not done) simply send to the BLE Joystick
+    blinkLed();
+    for (int8_t i = 0; i < data.NUM_CH; i++) {  // do something with the SBUS values for each channel
+      myData.channels[i] = constrain(data.ch[i], 192, 1792);
+    }
+    dataToSend = false;
+    for (int i = 0; i < 8; i++) {
+      joystickValues[i] = map(myData.channels[i], 192, 1792, 0, 2048);
+    }
+    bleGamepad.setAxes(joystickValues[0], joystickValues[1], joystickValues[2], joystickValues[3], joystickValues[4], joystickValues[5], joystickValues[6], joystickValues[7]);  //setAxes in the order (x, y, z, rx, ry, rz, slider1, slider2) setHIDAxes in the order (x, y, z, rz, rx, ry)
+  }
+#endif
+
 
   //SBUS on CPMM pin (input)
   if (sbus_rx.Read()) {
