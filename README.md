@@ -1,5 +1,5 @@
 # Radiomaster_TX16s_buddy_box
-Radiomaster TX16s buddy box (master/trainer and more)
+Radiomaster TX16s buddy box (master/trainer and BLE Joystick and more)
 
 I wanted a wireless buddy box for my Radiomaster TX16s to wireless link two TX16s in Master/Trainer mode.
 
