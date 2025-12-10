@@ -1,4 +1,4 @@
-/*Version 1.0
+/*Version 1.1
 
 Copyright JP Gleyzes 2025
 - full project description : https://hackaday.io/project/204529-tx16s-buddy-box-wireless-mastertrainer
@@ -20,6 +20,7 @@ it has the following specifications:
 - compatible 16 channels SBUS and PPM signals
 - extensible to further options (teasing: more to come !)
 
+V1.1 : added 6 buttons to joystick
 
 */
 
@@ -33,11 +34,12 @@ it has the following specifications:
 #ifdef HAS_JOYSTICK
 //Bluetooth gamepad
 #include <BleGamepad.h>  //https://github.com/lemmingDev/ESP32-BLE-Gamepad
-
+// install also NimBLE library : https://github.com/h2zero/NimBLE-Arduino
 BleGamepad bleGamepad("Radiomaster TX16s", "JPG", 100);
 BleGamepadConfiguration bleGamepadConfig;  // Create a BleGamepadConfiguration object to store all of the options
 
 int joystickValues[8];
+bool buttons[6];
 #endif
 
 //Preferences
@@ -353,7 +355,7 @@ void setup() {
   bleGamepadConfig.setPid(0x0041);
   bleGamepadConfig.setAxesMin(0x0000);  // 0 --> int16_t - 16 bit signed integer - Can be in decimal or hexadecimal
   bleGamepadConfig.setAxesMax(2048);    // 32767 --> int16_t - 16 bit signed integer - Can be in decimal or hexadecimal
-
+  bleGamepadConfig.setButtonCount(6);
   bleGamepad.begin(&bleGamepadConfig);  // Begin gamepad with configuration options
 #endif
 }
@@ -407,17 +409,14 @@ void loop() {
         myData.msgType = DATA;
         for (int8_t i = 0; i < data.NUM_CH; i++) {  // do something with the SBUS values for each channel
           myData.channels[i] = constrain(data.ch[i], 192, 1792);
+          //myData.channels[i] = data.ch[i];
         }
-        dataToSend = false;
+
         memcpy(pairingData.macAddr, myMacAddress, sizeof(uint8_t[6]));                     //with my MACaddress
         esp_err_t result = esp_now_send(peerAddress, (uint8_t *)&myData, sizeof(myData));  //send data to the peer
-#ifdef HAS_JOYSTICK
-        if (bleGamepad.isConnected()) {
-          for (int i = 0; i < 8; i++) {
-            joystickValues[i] = map(myData.channels[i], 192, 1792, 0, 2048);
-          }
-          bleGamepad.setAxes(joystickValues[0], joystickValues[1], joystickValues[2], joystickValues[3], joystickValues[4], joystickValues[5], joystickValues[6], joystickValues[7]);  //setAxes in the order (x, y, z, rx, ry, rz, slider1, slider2) setHIDAxes in the order (x, y, z, rz, rx, ry)
-        }
+#ifdef HAS_JOYSTICK                                                                        //do nothing here
+#else
+        dataToSend = false;
 #endif
       }
       break;
@@ -425,7 +424,7 @@ void loop() {
 #ifdef HAS_JOYSTICK
   if ((dataToSend) && (bleGamepad.isConnected())) {  //if data has not been yet sent (then PAIRING is not done) simply send to the BLE Joystick
     blinkLed();
-    for (int8_t i = 0; i < data.NUM_CH; i++) {  // do something with the SBUS values for each channel
+    for (int8_t i = 0; i < data.NUM_CH-1; i++) {  // do something with the SBUS values for each channel
       myData.channels[i] = constrain(data.ch[i], 192, 1792);
     }
     dataToSend = false;
@@ -434,6 +433,19 @@ void loop() {
     }
     bleGamepad.setAxes(joystickValues[0], joystickValues[1], joystickValues[2], joystickValues[3], joystickValues[4], joystickValues[5], joystickValues[6], joystickValues[7]);  //setAxes in the order (x, y, z, rx, ry, rz, slider1, slider2) setHIDAxes in the order (x, y, z, rz, rx, ry)
   }
+  //Serial.println(myData.channels[15] ); //channel 16 used to decode buttons (1 bit per button. 6 bits)
+  //Serial.println((data.ch[15]-173)*101/1638); //173 low value, 173+1638 gives MAX 100% value
+  int allButtons = (data.ch[15]-173)*102/1638 ; //102 is there for rounding...
+  allButtons = allButtons >> 1;
+  //Serial.println(allButtons);
+  for (int i = 0; i < 6; i++) {  for each bit affect the button state
+    if (allButtons & 1) bleGamepad.press(6-i);
+    else bleGamepad.release(6-i);
+    allButtons = allButtons >> 1;
+  }
+
+
+
 #endif
 
 
