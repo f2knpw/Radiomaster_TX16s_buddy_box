@@ -39,7 +39,6 @@ BleGamepad bleGamepad("Radiomaster TX16s", "JPG", 100);
 BleGamepadConfiguration bleGamepadConfig;  // Create a BleGamepadConfiguration object to store all of the options
 
 int joystickValues[8];
-bool buttons[6];
 #endif
 
 //Preferences
@@ -355,7 +354,8 @@ void setup() {
   bleGamepadConfig.setPid(0x0041);
   bleGamepadConfig.setAxesMin(0x0000);  // 0 --> int16_t - 16 bit signed integer - Can be in decimal or hexadecimal
   bleGamepadConfig.setAxesMax(2048);    // 32767 --> int16_t - 16 bit signed integer - Can be in decimal or hexadecimal
-  bleGamepadConfig.setButtonCount(6);
+  bleGamepadConfig.setButtonCount(6);   //6 buttons
+    bleGamepadConfig.setHatSwitchCount(0); //no hat
   bleGamepad.begin(&bleGamepadConfig);  // Begin gamepad with configuration options
 #endif
 }
@@ -438,14 +438,11 @@ void loop() {
   int allButtons = (data.ch[15]-173)*102/1638 ; //102 is there for rounding...
   allButtons = allButtons >> 1;
   //Serial.println(allButtons);
-  for (int i = 0; i < 6; i++) {  for each bit affect the button state
+  for (int i = 0; i < 6; i++) {  //for each bit, affect the button state
     if (allButtons & 1) bleGamepad.press(6-i);
     else bleGamepad.release(6-i);
     allButtons = allButtons >> 1;
   }
-
-
-
 #endif
 
 
