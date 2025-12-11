@@ -272,6 +272,31 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
   }
 }
 
+#ifdef HAS_JOYSTICK
+void manageJoystick(void) {
+  if ((dataToSend) && (bleGamepad.isConnected())) {  //if data has not been yet sent (then PAIRING is not done) simply send to the BLE Joystick
+    blinkLed();
+    for (int8_t i = 0; i < data.NUM_CH - 1; i++) {  // do something with the SBUS values for each channel
+      myData.channels[i] = constrain(data.ch[i], 192, 1792);
+    }
+    dataToSend = false;
+    for (int i = 0; i < 8; i++) {
+      joystickValues[i] = map(myData.channels[i], 192, 1792, 0, 2048);
+    }
+    bleGamepad.setAxes(joystickValues[0], joystickValues[1], joystickValues[2], joystickValues[3], joystickValues[4], joystickValues[5], joystickValues[6], joystickValues[7]);  //setAxes in the order (x, y, z, rx, ry, rz, slider1, slider2) setHIDAxes in the order (x, y, z, rz, rx, ry)
+  }
+  //Serial.println(myData.channels[15] ); //channel 16 used to decode buttons (1 bit per button. 6 bits)
+  //Serial.println((data.ch[15]-173)*101/1638); //173 low value, 173+1638 gives MAX 100% value
+  int allButtons = (data.ch[15] - 173) * 102 / 1638;  //102 is there for rounding...
+  allButtons = allButtons >> 1;
+  //Serial.println(allButtons);
+  for (int i = 0; i < 6; i++) {  //for each bit, affect the button state
+    if (allButtons & 1) bleGamepad.press(6 - i);
+    else bleGamepad.release(6 - i);
+    allButtons = allButtons >> 1;
+  }
+}
+#endif
 
 
 void setup() {
@@ -352,11 +377,11 @@ void setup() {
   // bleGamepadConfig.setControllerType(CONTROLLER_TYPE_GAMEPAD);  // CONTROLLER_TYPE_JOYSTICK, CONTROLLER_TYPE_GAMEPAD (DEFAULT), CONTROLLER_TYPE_MULTI_AXIS
   bleGamepadConfig.setVid(0x068F);
   bleGamepadConfig.setPid(0x0041);
-  bleGamepadConfig.setAxesMin(0x0000);  // 0 --> int16_t - 16 bit signed integer - Can be in decimal or hexadecimal
-  bleGamepadConfig.setAxesMax(2048);    // 32767 --> int16_t - 16 bit signed integer - Can be in decimal or hexadecimal
-  bleGamepadConfig.setButtonCount(6);   //6 buttons
-    bleGamepadConfig.setHatSwitchCount(0); //no hat
-  bleGamepad.begin(&bleGamepadConfig);  // Begin gamepad with configuration options
+  bleGamepadConfig.setAxesMin(0x0000);    // 0 --> int16_t - 16 bit signed integer - Can be in decimal or hexadecimal
+  bleGamepadConfig.setAxesMax(2048);      // 32767 --> int16_t - 16 bit signed integer - Can be in decimal or hexadecimal
+  bleGamepadConfig.setButtonCount(6);     //6 buttons
+  bleGamepadConfig.setHatSwitchCount(0);  //no hat
+  bleGamepad.begin(&bleGamepadConfig);    // Begin gamepad with configuration options
 #endif
 }
 
@@ -415,34 +440,14 @@ void loop() {
         memcpy(pairingData.macAddr, myMacAddress, sizeof(uint8_t[6]));                     //with my MACaddress
         esp_err_t result = esp_now_send(peerAddress, (uint8_t *)&myData, sizeof(myData));  //send data to the peer
 #ifdef HAS_JOYSTICK                                                                        //do nothing here
-#else
+        manageJoystick();
         dataToSend = false;
 #endif
       }
       break;
   }
-#ifdef HAS_JOYSTICK
-  if ((dataToSend) && (bleGamepad.isConnected())) {  //if data has not been yet sent (then PAIRING is not done) simply send to the BLE Joystick
-    blinkLed();
-    for (int8_t i = 0; i < data.NUM_CH-1; i++) {  // do something with the SBUS values for each channel
-      myData.channels[i] = constrain(data.ch[i], 192, 1792);
-    }
-    dataToSend = false;
-    for (int i = 0; i < 8; i++) {
-      joystickValues[i] = map(myData.channels[i], 192, 1792, 0, 2048);
-    }
-    bleGamepad.setAxes(joystickValues[0], joystickValues[1], joystickValues[2], joystickValues[3], joystickValues[4], joystickValues[5], joystickValues[6], joystickValues[7]);  //setAxes in the order (x, y, z, rx, ry, rz, slider1, slider2) setHIDAxes in the order (x, y, z, rz, rx, ry)
-  }
-  //Serial.println(myData.channels[15] ); //channel 16 used to decode buttons (1 bit per button. 6 bits)
-  //Serial.println((data.ch[15]-173)*101/1638); //173 low value, 173+1638 gives MAX 100% value
-  int allButtons = (data.ch[15]-173)*102/1638 ; //102 is there for rounding...
-  allButtons = allButtons >> 1;
-  //Serial.println(allButtons);
-  for (int i = 0; i < 6; i++) {  //for each bit, affect the button state
-    if (allButtons & 1) bleGamepad.press(6-i);
-    else bleGamepad.release(6-i);
-    allButtons = allButtons >> 1;
-  }
+#ifdef HAS_JOYSTICK  // if not already done inside ESPnow loop...
+  manageJoystick();
 #endif
 
 
