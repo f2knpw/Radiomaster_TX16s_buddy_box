@@ -44,7 +44,7 @@ and with a plane !
 " target="_blank"><img src="http://img.youtube.com/vi/onzTWL2fCzU/0.jpg" 
 alt="IMAGE ALT TEXT HERE" width="1180" height="664" border="10" /></a>
 
-and same board same code as a BLE Joystick !  _bdqKs-VCjA
+and same board same code as a BLE Joystick !  
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=_bdqKs-VCjA
 " target="_blank"><img src="http://img.youtube.com/vi/_bdqKs-VCjA/0.jpg" 
 alt="IMAGE ALT TEXT HERE" width="1180" height="664" border="10" /></a>
