@@ -49,3 +49,9 @@ and same board same code as a BLE Joystick !
 " target="_blank"><img src="http://img.youtube.com/vi/_bdqKs-VCjA/0.jpg" 
 alt="IMAGE ALT TEXT HERE" width="1180" height="664" border="10" /></a>
 
+
+And now a slight modification of the firmware (trainer side) to allow plugging a Thrusmaster T16000 joiystick in a ESP32-S3 board and connect it wirelessly to my TX16s withthe buddy box (original firmware onthe master side) 
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=oRUQ4mDlwY4
+" target="_blank"><img src="http://img.youtube.com/vi/oRUQ4mDlwY4/0.jpg" 
+alt="IMAGE ALT TEXT HERE" width="1180" height="664" border="10" /></a>
+
