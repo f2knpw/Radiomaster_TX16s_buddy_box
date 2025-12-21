@@ -948,4 +948,5 @@ void loop() {
       }
       break;
   }
-  if ((millis() - lastSent) > 20) dataToSe
+  if ((millis() - lastSent) > 20) dataToSend = true;
+}
